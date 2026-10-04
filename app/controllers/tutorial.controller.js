@@ -1,4 +1,5 @@
 const db = require("../models");
+const logger = require("../config/logger");
 const Tutorial = db.tutorials;
 const Op = db.Sequelize.Op;
 
@@ -52,18 +53,20 @@ exports.findAll = (req, res) => {
 // Find a single Tutorial with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;
-
+  logger.info(`Calling api to find the tutorial by id - ${id}`)
   Tutorial.findByPk(id)
     .then(data => {
       if (data) {
-        res.send(data);
+        logger.info({ payload: data.toJSON() }, `Tutorial is found with id : ${id}`);        res.send(data);
       } else {
+        logger.info(`Tutorial is not found with id : ${id}`);
         res.status(404).send({
           message: `Cannot find Tutorial with id=${id}.`
         });
       }
     })
     .catch(err => {
+      logger.info(`Error happened while finding tutorial : ${err.message}`);
       res.status(500).send({
         message: "Error retrieving Tutorial with id=" + id
       });
@@ -73,26 +76,56 @@ exports.findOne = (req, res) => {
 // Update a Tutorial by the id in the request
 exports.update = (req, res) => {
   const id = req.params.id;
-
+  logger.info(`Calling api to update tutorial by id - ${id} and body : ${JSON.stringify(req.body)}`);
   Tutorial.update(req.body, {
     where: { id: id }
   })
     .then(num => {
       if (num == 1) {
+        logger.info(`Tutorial is found with id : ${id}  , hence updated`);
         res.send({
           message: "Tutorial was updated successfully."
         });
       } else {
+        logger.info(`Tutorial is not found with id : ${id} for updated`);
         res.send({
           message: `Cannot update Tutorial with id=${id}. Maybe Tutorial was not found or req.body is empty!`
         });
       }
     })
     .catch(err => {
+      logger.info(`Error happened while updating Tutorial : ${err.message}`);
       res.status(500).send({
         message: "Error updating Tutorial with id=" + id
       });
     });
+};
+
+//Kafka Update
+exports.updateViaKafka = async (id, body) => {
+  try {
+    logger.info(
+        `update tutorial by id from kafka msg - ${id} and body: ${JSON.stringify(body)}`
+    );
+
+    const num = await Tutorial.update(body, {
+      where: { id: id }
+    });
+
+    if (num[0] === 1) {
+      logger.info(
+          `Tutorial is found with id: ${id}, hence updated successfully`
+      );
+    } else {
+      logger.error(
+          `Tutorial is not found with id: ${id} for update`
+      );
+    }
+  } catch (err) {
+    logger.error(
+        `Error happened while updating Tutorial: ${err.message}`
+    );
+  }
 };
 
 // Delete a Tutorial with the specified id in the request

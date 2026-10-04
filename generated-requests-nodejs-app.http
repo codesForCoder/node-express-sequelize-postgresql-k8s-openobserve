@@ -1,0 +1,33 @@
+###
+POST http://localhost:9090/api/tutorials
+Content-Type: application/json
+
+{ "title": "Sample Tutorial", "description": "This is a good tutorial" }
+
+
+###
+POST http://localhost:9090/api/tutorials
+Content-Type: application/json
+
+{ "title": "Sample Tutorial 2", "description": "This is a good tutorial 2" }
+
+###
+@id=2
+GET http://localhost:9090/api/tutorials/{{id}}
+
+
+###
+GET http://localhost:9090/api/tutorials
+
+
+
+
+###
+@id_update=2
+PUT http://localhost:9090/api/tutorials/{{id_update}}
+Content-Type: application/json
+
+{"title": "Sample Tutorial 2 Updated","description": "This is a good tutorial updated" , "published": true  }
+
+###
+GET http://localhost:8084/products/{{id_update}}

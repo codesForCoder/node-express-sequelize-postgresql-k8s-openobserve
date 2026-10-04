@@ -1,9 +1,12 @@
+
+require("dotenv").config();
+require("./tracing");
+const logger = require("./app/config/logger");
+const { startKafkaConsumer } = require("./app/config/kafkaConsumer");
 const express = require("express");
-// const bodyParser = require("body-parser"); /* deprecated */
 const cors = require("cors");
 
 const app = express();
-
 var corsOptions = {
   origin: "http://localhost:8081"
 };
@@ -31,7 +34,10 @@ app.get("/", (req, res) => {
 require("./app/routes/turorial.routes")(app);
 
 // set port, listen for requests
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.APP_PORT || 9090;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
+  startKafkaConsumer().catch((error) => {
+    console.error("Kafka consumer failed to start:", error);
+  });
 });
