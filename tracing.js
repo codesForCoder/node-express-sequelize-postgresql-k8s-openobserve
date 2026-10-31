@@ -30,7 +30,9 @@ const metricExporter = new OTLPMetricExporter({
 
 const metricReader = new PeriodicExportingMetricReader({
     exporter: metricExporter,
-    exportIntervalMillis: 15000
+    exportIntervalMillis: Number(
+        process.env.OTEL_METRIC_EXPORT_INTERVAL || 15000
+    )
 });
 
 
