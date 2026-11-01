@@ -111,7 +111,7 @@ exports.updateViaKafka = async (id, body) => {
     const num = await Tutorial.update(body, {
       where: { id: id }
     });
-
+    logger.info(`Response received from db updated of kafka payload  ${num}`);
     if (num[0] === 1) {
       logger.info(
           `Tutorial is found with id: ${id}, hence updated successfully`

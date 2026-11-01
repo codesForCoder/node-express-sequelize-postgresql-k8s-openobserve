@@ -5,6 +5,7 @@ const {
     propagation,
     trace,
     SpanKind,
+    SpanStatusCode,
     ROOT_CONTEXT,
 } = require("@opentelemetry/api");
 const {updateViaKafka} = require("../controllers/tutorial.controller");
@@ -64,7 +65,6 @@ async function startKafkaConsumer() {
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
             const headers = message.headers || {};
-            logger.info(`message received from topic ${topic}`);
             /*
              * Extract the producer's trace context from Kafka headers.
              */
@@ -101,10 +101,13 @@ async function startKafkaConsumer() {
                     links,
                     attributes: {
                         "messaging.system": "kafka",
+                        "messaging.operation.name": "process",
+                        "messaging.operation.type": "process",
                         "messaging.destination.name": topic,
-                        "messaging.kafka.partition": partition,
-                        "messaging.kafka.offset": message.offset,
-                        "messaging.kafka.event_type": eventType || "unknown",
+                        "messaging.destination.partition.id": String(partition),
+                        "messaging.consumer.group.name":
+                            process.env.KAFKA_GROUP_ID || "node-tutorial-consumer",
+                        "app.event.type": eventType || "unknown",
                     },
                 },
                 ROOT_CONTEXT
@@ -119,6 +122,7 @@ async function startKafkaConsumer() {
                 trace.setSpan(ROOT_CONTEXT, span),
                 async () => {
                     try {
+                        logger.info(`message received from topic ${topic}`);
                         logger.info(
                             `Kafka event received: type=${eventType}, offset=${message.offset}`
                         );
@@ -148,9 +152,20 @@ async function startKafkaConsumer() {
                     } catch (error) {
                         span.recordException(error);
                         span.setStatus({
-                            code: 2,
+                            code: SpanStatusCode.ERROR,
                             message: error.message,
                         });
+                        span.setAttribute(
+                            "kafka.processing.completed",
+                            false
+                        );
+
+                        logger.error(
+                            `Kafka processing failed: ${error.message}`
+                        );
+
+                        // Important: propagate failure to KafkaJS
+                        throw error;
                     } finally {
                         span.end();
                     }

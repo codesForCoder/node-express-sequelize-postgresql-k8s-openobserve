@@ -40,7 +40,11 @@ const sdk = new NodeSDK({
     traceExporter,
     metricReader,
     instrumentations: [
-        getNodeAutoInstrumentations()
+        getNodeAutoInstrumentations({
+            "@opentelemetry/instrumentation-kafkajs": {
+                enabled: false
+            }
+        })
     ]
 });
 
