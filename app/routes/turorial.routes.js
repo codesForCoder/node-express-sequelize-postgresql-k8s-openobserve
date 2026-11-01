@@ -1,5 +1,6 @@
 module.exports = app => {
   const tutorials = require("../controllers/tutorial.controller.js");
+  const { trace } = require("@opentelemetry/api");
 
   var router = require("express").Router();
 
@@ -23,6 +24,19 @@ module.exports = app => {
 
   // Delete all Tutorials
   router.delete("/", tutorials.deleteAll);
+
+  // Trace ID response middleware
+  app.use((req, res, next) => {
+    const activeSpan = trace.getActiveSpan();
+
+    if (activeSpan) {
+      const traceId = activeSpan.spanContext().traceId;
+      res.setHeader("trace-id", traceId);
+    }
+
+    next();
+  });
+
 
   app.use("/api/tutorials", router);
 };
